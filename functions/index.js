@@ -16,7 +16,6 @@ exports.audioProcess = functions.storage.object().onFinalize(async (object) => {
     const fileBucket = object.bucket; // The Storage bucket that contains the file.
     const filePath = object.name; // File path in the bucket.
     const contentType = object.contentType; // File content type.
-    const url = object.selfLink; // File url
 
     // Exit if this is triggered on a file that is not an audio.
     if (!contentType.startsWith('audio/')) {
@@ -30,6 +29,8 @@ exports.audioProcess = functions.storage.object().onFinalize(async (object) => {
     mm.parseStream(stream)
     .then( (metadata) => metadata.common)
     .then((data)=>{
+        const licenses = data.encodedby;
+        const licenses_array = licenses ? licenses.split(",") : ["free"];
         const record = {
             title : data.title ? data.title : "Others",
             artist : data.artist ? data.artist : "Others",
@@ -40,7 +41,7 @@ exports.audioProcess = functions.storage.object().onFinalize(async (object) => {
             label : data.label ? data.label : ["Others"],
             releasecountry: data.releasecountry ? data.releasecountry : "Others",
             acoustid_id : data.acoustid_id ? data.acoustid_id : "Others",
-            url : url,
+            license : licenses_array,
             path : filePath
         }
 
