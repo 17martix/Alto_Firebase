@@ -47,6 +47,8 @@ exports.on_song_uploaded = functions.region('europe-west1')
     mm.parseStream(stream)
     .then( (metadata) => metadata.common)
     .then((data)=>{
+        const licenses = data.encodedby;
+        const licenses_array = licenses ? licenses.split(",") : ["private"];
         const record = {
             title : data.title ? data.title : "Others",
             artist : data.artist ? data.artist : "Others",
@@ -59,7 +61,7 @@ exports.on_song_uploaded = functions.region('europe-west1')
             lyrics: data.lyrics ? data.lyrics[0] : "None",
             acoustid_id : data.acoustid_id ? data.acoustid_id : "Others",
             bpm : data.bpm ? data.bpm : 0,
-            license : data.encodedby ? data.encodedby : "private",
+            license : licenses_array,
             path : filePath,
             releasedate : data.date ? data.date : "0000-00-00",
             mood : data.mood ? data.mood : "Others",
@@ -83,6 +85,30 @@ exports.on_song_uploaded = functions.region('europe-west1')
 
    return console.log('processaudio Success');
 
+});
+
+exports.on_user_created = functions.region('europe-west1')
+.auth.user().onCreate((user) => {
+    const id = user.uid;
+    
+    let data = {
+        is_library_downloaded: 1,
+        is_playlist_downloaded: 1,
+        repeat_mode: 2,
+        shuffle_mode: 0,
+        license : 'free'
+    };
+
+    let db = admin.firestore();
+    db.collection('users').doc(id).collection('settings').doc(id).set(data);
+});
+
+exports.on_user_deleted = functions.region('europe-west1')
+.auth.user().onDelete((user) => {
+    const id = user.uid;
+
+    let db = admin.firestore();
+    db.collection('users').doc(id).delete();
 });
 
 exports.on_song_record_deleted = functions.region('europe-west1')
